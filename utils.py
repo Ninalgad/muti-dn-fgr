@@ -1,16 +1,23 @@
 from torch.utils.data import Dataset, DataLoader
-import cv2
 import numpy as np
 import torch
 from torch.nn import functional as F
+from scipy.ndimage import zoom
+
+# from tqdm import tqdm
 
 
 def preprocess_2d_image(x):
-    x = cv2.resize(x, (281, 372))
+    x = zoom(x, (.5, .5, 1))
     x = np.expand_dims(x, axis=0)
     x = np.concatenate([x, x, x], axis=0)
     x = x.astype('float32') / 256.
     return x
+
+
+def convert_3d_image_to_2d(image_3d):
+    return [preprocess_2d_image(image_3d[:, :, i])
+            for i in range(image_3d.shape[-1])]
 
 
 class TestImageDataset(Dataset):
@@ -25,8 +32,8 @@ class TestImageDataset(Dataset):
         return self.x[idx]
 
 
-def predict_probabilities(image_3d, model, device, batch_size=32):
-    images = [preprocess_2d_image(image_3d[:, :, i]) for i in range(image_3d.shape[-1])]
+def predict_probabilities(image_3d, model, device, batch_size=4):
+    images = convert_3d_image_to_2d(image_3d)
     test_loader = DataLoader(TestImageDataset(images), batch_size=batch_size, shuffle=False)
     predictions = []
     # for x in tqdm(test_loader):
@@ -35,4 +42,8 @@ def predict_probabilities(image_3d, model, device, batch_size=32):
         p = F.sigmoid(model(x)).detach().cpu().numpy()
         predictions.append(p)
     predictions = np.concatenate(predictions, axis=0)
-    return np.transpose(predictions, (1, 2, 0))
+    predictions = np.squeeze(predictions, axis=1)
+
+    predictions = np.transpose(predictions, (1, 2, 0))
+
+    return predictions

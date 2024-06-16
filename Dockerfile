@@ -23,6 +23,7 @@ WORKDIR /opt/app
 COPY --chown=user:user resources /opt/app/resources
 
 COPY --chown=user:user requirements.txt /opt/app/
+
 # You can add any Python dependencies to requirements.txt
 RUN python -m pip install \
     --user \
@@ -34,6 +35,8 @@ RUN python -m pip install \
 COPY --chown=user:user inference.py /opt/app/
 COPY --chown=user:user postprocess_probability_maps.py /opt/app/
 COPY --chown=user:user model.py /opt/app/
+COPY --chown=user:user utils.py /opt/app/
+COPY --chown=user:user ternausnet.py /opt/app/
 
 
 ENTRYPOINT ["python", "inference.py"]

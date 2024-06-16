@@ -1,3 +1,17 @@
+"""Reference:
+modified version of `TernausNet: U-Net with VGG11 Encoder Pre-Trained on ImageNet for Image Segmentation`
+github:
+    https://github.com/ternaus/TernausNet
+
+paper:
+    @ARTICLE{arXiv:1801.05746,
+             author = {V. Iglovikov and A. Shvets},
+              title = {TernausNet: U-Net with VGG11 Encoder Pre-Trained on ImageNet for Image Segmentation},
+            journal = {ArXiv e-prints},
+             eprint = {1801.05746},
+               year = 2018
+            }
+"""
 import torch
 import torchvision
 from torch import nn
@@ -23,7 +37,7 @@ class ConvRelu(nn.Module):
 
 class DecoderBlock(nn.Module):
     def __init__(
-        self, in_channels: int, middle_channels: int, out_channels: int
+            self, in_channels: int, middle_channels: int, out_channels: int
     ) -> None:
         super().__init__()
 
@@ -110,11 +124,11 @@ class UNet11(nn.Module):
 
 class Interpolate(nn.Module):
     def __init__(
-        self,
-        size: int = None,
-        scale_factor: int = None,
-        mode: str = "nearest",
-        align_corners: bool = False,
+            self,
+            size: int = None,
+            scale_factor: int = None,
+            mode: str = "nearest",
+            align_corners: bool = False,
     ):
         super().__init__()
         self.interp = nn.functional.interpolate
@@ -136,11 +150,11 @@ class Interpolate(nn.Module):
 
 class DecoderBlockV2(nn.Module):
     def __init__(
-        self,
-        in_channels: int,
-        middle_channels: int,
-        out_channels: int,
-        is_deconv: bool = True,
+            self,
+            in_channels: int,
+            middle_channels: int,
+            out_channels: int,
+            is_deconv: bool = True,
     ):
         super().__init__()
         self.in_channels = in_channels
@@ -171,11 +185,11 @@ class DecoderBlockV2(nn.Module):
 
 class UNet16(nn.Module):
     def __init__(
-        self,
-        num_classes: int = 1,
-        num_filters: int = 32,
-        pretrained: bool = False,
-        is_deconv: bool = False,
+            self,
+            num_classes: int = 1,
+            num_filters: int = 32,
+            pretrained: bool = False,
+            is_deconv: bool = False,
     ):
         """
 
@@ -261,38 +275,38 @@ class UNet16(nn.Module):
 
         center = self.center(self.pool(conv5))
 
-        center = F.pad(center, (0,1,0,1), value=0)
+        center = F.pad(center, (0, 1, 0, 1), value=0)
         dec5 = self.dec5(torch.cat([center, conv5], 1))
 
-        dec5 = F.pad(dec5, (0,1), value=0)
+        dec5 = F.pad(dec5, (0, 1), value=0)
         dec4 = self.dec4(torch.cat([dec5, conv4], 1))
 
-        dec4 = F.pad(dec4, (0,0,0,1), value=0)
+        dec4 = F.pad(dec4, (0, 0, 0, 1), value=0)
         dec3 = self.dec3(torch.cat([dec4, conv3], 1))
 
         dec2 = self.dec2(torch.cat([dec3, conv2], 1))
 
-        dec2 = F.pad(dec2, (0,1), value=0)
+        dec2 = F.pad(dec2, (0, 1), value=0)
         dec1 = self.dec1(torch.cat([dec2, conv1], 1))
         return self.final(dec1)
 
 
 class SimpNet(nn.Module):
-  def __init__(self, output_dim=1, hidden_dim=64, pretrained=False, freeze_encoder=False):
-    super().__init__()
-    # from ternausnet.models import UNet16
-    self.encoder = UNet16(num_classes=hidden_dim, pretrained=pretrained)
-    self.hidden_layer = nn.Conv2d(hidden_dim, hidden_dim, 1)
-    self.output_layer = nn.Conv2d(hidden_dim, output_dim, 1)
+    def __init__(self, output_dim=1, hidden_dim=64, pretrained=False, freeze_encoder=False):
+        super().__init__()
+        # from ternausnet.models import UNet16
+        self.encoder = UNet16(num_classes=hidden_dim, pretrained=pretrained)
+        self.hidden_layer = nn.Conv2d(hidden_dim, hidden_dim, 1)
+        self.output_layer = nn.Conv2d(hidden_dim, output_dim, 1)
 
-    if freeze_encoder:
-      for param in self.encoder.encoder.parameters():
-        param.requires_grad = False
+        if freeze_encoder:
+            for param in self.encoder.encoder.parameters():
+                param.requires_grad = False
 
-  def forward(self, x):
-    x = self.encoder(x)
-    x = torch.nn.ReLU()(x)
-    x = self.hidden_layer(x)
-    x = torch.nn.ReLU()(x)
-    x = self.output_layer(x)
-    return x
+    def forward(self, x):
+        x = self.encoder(x)
+        x = torch.nn.ReLU()(x)
+        x = self.hidden_layer(x)
+        x = torch.nn.ReLU()(x)
+        x = self.output_layer(x)
+        return x

@@ -2,16 +2,13 @@ from pathlib import Path
 from medpy.io.load import load
 import numpy as np
 import torch
-# from batchgenerators.utilities.file_and_folder_operations import join
 from evalutils import SegmentationAlgorithm
 from evalutils.validators import (
     UniqueImagesValidator,
     UniquePathIndicesValidator,
 )
-#from nnunetv2.imageio.simpleitk_reader_writer import SimpleITKIO
-#from nnunetv2.inference.predict_from_raw_data import nnUNetPredictor
 
-from unet import SimpNet
+from ternausnet import SimpNet
 from utils import predict_probabilities
 from postprocess_probability_maps import postprocess_single_probability_map
 
@@ -31,8 +28,6 @@ class FetalAbdomenSegmentation(SegmentationAlgorithm):
         # Initialize the predictor
         self.predictor = self.initialize_predictor()
 
-        self._device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
     def initialize_predictor(self, task="Dataset300_ACOptimalSuboptimal",
                              network="2d", checkpoint="checkpoint_final.pt", folds=(0,)):
         """
@@ -42,21 +37,22 @@ class FetalAbdomenSegmentation(SegmentationAlgorithm):
         predictor = SimpNet()
 
         # initializes the network architecture, loads the checkpoint
-        predictor.to(self._device)
-        checkpoint = torch.load(RESOURCE_PATH / checkpoint, self._device)
-        predictor.encoder.load_state_dict(checkpoint['model_state_dict'])
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        predictor.to(device)
+        checkpoint = torch.load(RESOURCE_PATH / checkpoint, device)
+        predictor.load_state_dict(checkpoint['model_state_dict'])
 
         return predictor
 
-    def predict(self, input_img_path, save_probabilities=True):
+    def predict(self, input_img_path):
         """
         Use trained nnUNet network to generate segmentation masks
         """
         # ideally we would like to use predictor.predict_from_files but this docker container will be called
         # for each individual test case so that this doesn't make sense
         image_np, _ = load(input_img_path)
-
-        probabilities = predict_probabilities(image_np, self.predictor, self._device)
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        probabilities = predict_probabilities(image_np, self.predictor, device)
         return probabilities
 
     def postprocess(self, probability_map):

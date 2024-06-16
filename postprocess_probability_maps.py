@@ -1,4 +1,6 @@
 from scipy.ndimage import binary_dilation
+import numpy as np
+from scipy.ndimage import zoom
 
 
 def mark_boundary_points(binary_mask):
@@ -31,4 +33,8 @@ def mark_boundary_points(binary_mask):
 
 def postprocess_single_probability_map(m, config):
     m = (m > config['threshold']).astype('uint8')
-    return mark_boundary_points(m)
+    map_ = np.zeros_like(m, dtype='uint8')
+    for i in range(map_.shape[-1]):
+        map_[:, :, i] = mark_boundary_points(m[:, :, i])
+    map_ = zoom(map_, (2, 2, 1))
+    return map_

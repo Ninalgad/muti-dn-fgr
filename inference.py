@@ -40,16 +40,12 @@ def run():
     # Process the inputs: any way you'd like
     _show_torch_cuda_info()
 
-    # print contents of input folder
-    print("input folder contents:")
-    print_directory_contents(INPUT_PATH)
-
     # Instantiate the algorithm
     algorithm = FetalAbdomenSegmentation()
 
     # Forward pass
     fetal_abdomen_probability_map = algorithm.predict(
-        stacked_fetal_ultrasound_path, save_probabilities=True)
+        stacked_fetal_ultrasound_path, save_probabilities=True)  # (3, n_frames, 562, 744)
 
     # Postprocess the output
     fetal_abdomen_postprocessed = algorithm.postprocess(
@@ -108,6 +104,7 @@ def load_image_file_as_array(*, location):
 def get_image_file_path(*, location):
     input_files = glob(str(location / "*.tiff")) + \
                   glob(str(location / "*.mha"))
+    print(input_files, location)
     return input_files[0]
 
 
