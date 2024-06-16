@@ -8,7 +8,7 @@ from scipy.ndimage import zoom
 
 
 def preprocess_2d_image(x):
-    x = zoom(x, (.5, .5, 1))
+    x = zoom(x, (.5, .5))
     x = np.expand_dims(x, axis=0)
     x = np.concatenate([x, x, x], axis=0)
     x = x.astype('float32') / 256.
@@ -36,14 +36,12 @@ def predict_probabilities(image_3d, model, device, batch_size=4):
     images = convert_3d_image_to_2d(image_3d)
     test_loader = DataLoader(TestImageDataset(images), batch_size=batch_size, shuffle=False)
     predictions = []
-    # for x in tqdm(test_loader):
+
     for x in test_loader:
         x = torch.tensor(x, dtype=torch.float32).to(device)
         p = F.sigmoid(model(x)).detach().cpu().numpy()
         predictions.append(p)
     predictions = np.concatenate(predictions, axis=0)
     predictions = np.squeeze(predictions, axis=1)
-
-    predictions = np.transpose(predictions, (1, 2, 0))
 
     return predictions

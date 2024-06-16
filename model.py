@@ -44,13 +44,16 @@ class FetalAbdomenSegmentation(SegmentationAlgorithm):
 
         return predictor
 
-    def predict(self, input_img_path):
+    def predict(self, input_img_path, debug=False):
         """
         Use trained nnUNet network to generate segmentation masks
         """
         # ideally we would like to use predictor.predict_from_files but this docker container will be called
         # for each individual test case so that this doesn't make sense
         image_np, _ = load(input_img_path)
+        if debug:
+          image_np = image_np[:, :, :2]
+        print('image_np', image_np.shape)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         probabilities = predict_probabilities(image_np, self.predictor, device)
         return probabilities
@@ -76,6 +79,7 @@ def select_fetal_abdomen_mask_and_frame(segmentation_masks: np.ndarray) -> (np.n
     Select the fetal abdomen mask and the corresponding frame number from the segmentation masks
     """
     # Initialize variables to keep track of the largest area and the corresponding 2D image
+    print('segmentation_masks', segmentation_masks.shape)
     largest_area = 0
     selected_image = None
 

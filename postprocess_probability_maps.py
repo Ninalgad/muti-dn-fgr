@@ -32,9 +32,12 @@ def mark_boundary_points(binary_mask):
 
 
 def postprocess_single_probability_map(m, config):
+    # m: (n, 372, 281)
     m = (m > config['threshold']).astype('uint8')
-    map_ = np.zeros_like(m, dtype='uint8')
-    for i in range(map_.shape[-1]):
-        map_[:, :, i] = mark_boundary_points(m[:, :, i])
-    map_ = zoom(map_, (2, 2, 1))
-    return map_
+    classes = []
+    for frame in m:
+        frame = mark_boundary_points(frame)
+        frame = zoom(frame, (2, 2))
+        classes.append(frame)
+    classes = np.transpose(np.array(classes, 'uint8'), axes=(0, 2, 1))
+    return classes
