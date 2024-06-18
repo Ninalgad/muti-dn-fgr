@@ -47,15 +47,15 @@ def run():
 
     # Forward pass
     fetal_abdomen_probability_map = algorithm.predict(
-        stacked_fetal_ultrasound_path, debug=DEBUG)  # (372, 281, n)
+        stacked_fetal_ultrasound_path, debug=DEBUG)  # (372, 281, num_frames)
 
     # Postprocess the output
     fetal_abdomen_postprocessed = algorithm.postprocess(
-        fetal_abdomen_probability_map) # (n, 562, 744)
+        fetal_abdomen_probability_map)  # (num_frames, 562, 744)
 
     # Select the fetal abdomen mask and the corresponding frame number
     fetal_abdomen_segmentation, fetal_abdomen_frame_number = select_fetal_abdomen_mask_and_frame(
-        fetal_abdomen_postprocessed) # (562, 744)
+        fetal_abdomen_postprocessed)  # (562, 744)
 
     # Save your output
     write_array_as_image_file(

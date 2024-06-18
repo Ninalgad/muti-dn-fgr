@@ -26,23 +26,23 @@ class FetalAbdomenSegmentation(SegmentationAlgorithm):
             ),
         )
         # Initialize the predictor
-        self.predictor = self.initialize_predictor()
+        self.predictor = None
+        self.threshold = None
+        self.initialize_predictor()
 
-    def initialize_predictor(self, task="Dataset300_ACOptimalSuboptimal",
-                             network="2d", checkpoint="checkpoint_final.pt", folds=(0,)):
+    def initialize_predictor(self, checkpoint="checkpoint_final.pt"):
         """
         Initializes the nnUNet predictor
         """
         # instantiates the predictor
-        predictor = SimpNet()
+        self.predictor = SimpNet()
 
         # initializes the network architecture, loads the checkpoint
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        predictor.to(device)
+        self.predictor.to(device)
         checkpoint = torch.load(RESOURCE_PATH / checkpoint, device)
-        predictor.load_state_dict(checkpoint['model_state_dict'])
-
-        return predictor
+        self.threshold = checkpoint['best_thresh']
+        self.predictor.load_state_dict(checkpoint['model_state_dict'])
 
     def predict(self, input_img_path, debug=False):
         """
@@ -52,8 +52,8 @@ class FetalAbdomenSegmentation(SegmentationAlgorithm):
         # for each individual test case so that this doesn't make sense
         image_np, _ = load(input_img_path)
         if debug:
-          image_np = image_np[:, :, :2]
-        print('image_np', image_np.shape)
+            image_np = image_np[:, :, :2]
+
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         probabilities = predict_probabilities(image_np, self.predictor, device)
         return probabilities
@@ -64,7 +64,7 @@ class FetalAbdomenSegmentation(SegmentationAlgorithm):
         """
         # Define the postprocessing configurations
         configs = {
-            "threshold": 0.035175879396984924
+            "threshold": self.threshold
         }
 
         # Postprocess the probability map
@@ -79,9 +79,9 @@ def select_fetal_abdomen_mask_and_frame(segmentation_masks: np.ndarray) -> (np.n
     Select the fetal abdomen mask and the corresponding frame number from the segmentation masks
     """
     # Initialize variables to keep track of the largest area and the corresponding 2D image
-    print('segmentation_masks', segmentation_masks.shape)
     largest_area = 0
-    selected_image = None
+    selected_image = np.zeros_like(segmentation_masks[0])
+    fetal_abdomen_frame_number = -1
 
     # Iterate over the 2D images in the 3D array
     for frame in range(len(segmentation_masks)):
@@ -99,11 +99,6 @@ def select_fetal_abdomen_mask_and_frame(segmentation_masks: np.ndarray) -> (np.n
             largest_area = area_class_2
             selected_image = segmentation_masks[frame]
             fetal_abdomen_frame_number = frame
-
-    # If no 2D image with a positive area was found, provide an empty segmentation mask and set the frame number to -1
-    if selected_image is None:
-        selected_image = np.zeros_like(segmentation_masks[0])
-        fetal_abdomen_frame_number = -1
 
     # Convert the selected image to a binary mask
     selected_image = (selected_image > 0).astype(np.uint8)
