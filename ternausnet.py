@@ -291,22 +291,36 @@ class UNet16(nn.Module):
         return self.final(dec1)
 
 
+def point_wise_feed_forward_network(d_in, d_out, dff):
+    return nn.Sequential(
+        nn.Linear(d_in, dff),
+        nn.ReLU(),
+        nn.Linear(dff, d_out)
+    )
+
+
 class SimpNet(nn.Module):
-    def __init__(self, output_dim=1, hidden_dim=64, pretrained=False, freeze_encoder=False):
+    def __init__(self, output_dim=1, hidden_dim=64, pretrained=True, freeze_encoder=False):
         super().__init__()
-        # from ternausnet.models import UNet16
+
+        self.frame_head = point_wise_feed_forward_network(256, 1, hidden_dim)
         self.encoder = UNet16(num_classes=hidden_dim, pretrained=pretrained)
         self.hidden_layer = nn.Conv2d(hidden_dim, hidden_dim, 1)
-        self.output_layer = nn.Conv2d(hidden_dim, output_dim, 1)
+        self.segmentation_head = nn.Conv2d(hidden_dim, output_dim, 1)
 
         if freeze_encoder:
             for param in self.encoder.encoder.parameters():
                 param.requires_grad = False
 
     def forward(self, x):
-        x = self.encoder(x)
+        x, c = self.encoder(x)
+
+        c = F.max_pool2d(c, kernel_size=c.size()[2:])
+        c = torch.squeeze(c, dim=(2, 3))
+        c = torch.tanh(self.frame_head(c))
+
         x = torch.nn.ReLU()(x)
         x = self.hidden_layer(x)
         x = torch.nn.ReLU()(x)
-        x = self.output_layer(x)
-        return x
+        x = self.segmentation_head(x)
+        return x, c
