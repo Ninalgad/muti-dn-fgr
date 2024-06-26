@@ -288,7 +288,7 @@ class UNet16(nn.Module):
 
         dec2 = F.pad(dec2, (0, 1), value=0)
         dec1 = self.dec1(torch.cat([dec2, conv1], 1))
-        return self.final(dec1)
+        return self.final(dec1), center
 
 
 def point_wise_feed_forward_network(d_in, d_out, dff):

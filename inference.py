@@ -25,7 +25,7 @@ from pathlib import Path
 import numpy as np
 import SimpleITK
 
-from model import FetalAbdomenSegmentation, select_fetal_abdomen_mask_and_frame
+from model import FetalAbdomenSegmentation
 
 INPUT_PATH = Path("/input")
 OUTPUT_PATH = Path("/output")
@@ -54,7 +54,7 @@ def run():
         fetal_abdomen_probability_map)  # (num_frames, 562, 744)
 
     # Select the fetal abdomen mask and the corresponding frame number
-    fetal_abdomen_frame_number = np.argmin(relative_frame_distances)
+    fetal_abdomen_frame_number = np.argmin(np.abs(relative_frame_distances))
     fetal_abdomen_segmentation = fetal_abdomen_postprocessed[fetal_abdomen_frame_number]
 
     # Save your output

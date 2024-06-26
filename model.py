@@ -1,6 +1,5 @@
 from pathlib import Path
 from medpy.io.load import load
-import numpy as np
 import torch
 from evalutils import SegmentationAlgorithm
 from evalutils.validators import (

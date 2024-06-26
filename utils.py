@@ -39,6 +39,7 @@ def predict_probabilities(image_3d, model, device, batch_size=4):
         x = x.to(device)
         s, d = model(x)
         s = F.sigmoid(s).detach().cpu().numpy()
+        s = np.squeeze(s, axis=1)
         d = d.detach().cpu().numpy()
         d = np.squeeze(d, axis=-1)
         seg_pred.append(s)
