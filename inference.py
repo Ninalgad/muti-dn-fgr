@@ -54,7 +54,7 @@ def run():
         fetal_abdomen_probability_map)  # (num_frames, 562, 744)
 
     # Select the fetal abdomen mask and the corresponding frame number
-    fetal_abdomen_frame_number = np.argmin(np.abs(relative_frame_distances))
+    fetal_abdomen_frame_number = get_frame_number(relative_frame_distances)
     fetal_abdomen_segmentation = fetal_abdomen_postprocessed[fetal_abdomen_frame_number]
 
     # Save your output
@@ -82,6 +82,30 @@ def run():
     print(type(fetal_abdomen_frame_number))
 
     return 0
+
+
+def get_frame_number(rel_dist):
+    n = len(rel_dist)
+
+    # aggregate predictions from each frame
+    rfn = np.argmax(compute_distance_distribution(n*rel_dist), n=n)
+
+    # overall minimum prediction
+    mfn = np.argmin(np.abs(rel_dist))
+
+    # test show averaging yields best results
+    return int(np.rint((rfn + mfn) / 2))
+
+
+def compute_distance_distribution(relative_distances, n=840):
+    dist = np.zeros(n)
+    for i, x in enumerate(relative_distances):
+        if x != -1:
+            j = int(i + x)
+            j = np.clip(j, 0, n - 1)
+            dist[j] = 1 + dist[j]
+
+    return dist
 
 
 def write_json_file(*, location, content):
