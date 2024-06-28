@@ -88,7 +88,7 @@ def get_frame_number(rel_dist):
     n = len(rel_dist)
 
     # aggregate predictions from each frame
-    rfn = np.argmax(compute_distance_distribution(n*rel_dist), n=n)
+    rfn = np.argmax(compute_distance_distribution(n*rel_dist, n=n))
 
     # overall minimum prediction
     mfn = np.argmin(np.abs(rel_dist))

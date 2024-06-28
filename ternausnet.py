@@ -295,12 +295,14 @@ def point_wise_feed_forward_network(d_in, d_out, dff):
     return nn.Sequential(
         nn.Linear(d_in, dff),
         nn.ReLU(),
+        nn.Linear(dff, dff),
+        nn.ReLU(),
         nn.Linear(dff, d_out)
     )
 
 
 class SimpNet(nn.Module):
-    def __init__(self, output_dim=1, hidden_dim=64, pretrained=True, freeze_encoder=False):
+    def __init__(self, output_dim=1, hidden_dim=128, pretrained=True, freeze_encoder=False):
         super().__init__()
 
         self.frame_head = point_wise_feed_forward_network(256, 1, hidden_dim)
