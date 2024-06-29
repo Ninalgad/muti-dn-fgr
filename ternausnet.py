@@ -188,27 +188,15 @@ class UNet16(nn.Module):
             self,
             num_classes: int = 1,
             num_filters: int = 32,
-            pretrained: bool = False,
+            weights: str = None,
             is_deconv: bool = False,
     ):
-        """
-
-        Args:
-            num_classes:
-            num_filters:
-            pretrained:
-                False - no pre-trained network used
-                True - encoder pre-trained with VGG16
-            is_deconv:
-                False: bilinear interpolation is used in decoder
-                True: deconvolution is used in decoder
-        """
         super().__init__()
         self.num_classes = num_classes
 
         self.pool = nn.MaxPool2d(2, 2)
 
-        self.encoder = torchvision.models.vgg16(pretrained=pretrained).features
+        self.encoder = torchvision.models.vgg16(weights=weights).features
 
         self.relu = nn.ReLU(inplace=True)
 
@@ -302,11 +290,11 @@ def point_wise_feed_forward_network(d_in, d_out, dff):
 
 
 class SimpNet(nn.Module):
-    def __init__(self, output_dim=1, hidden_dim=128, pretrained=True, freeze_encoder=False):
+    def __init__(self, output_dim=1, weights=None, hidden_dim=128, freeze_encoder=False):
         super().__init__()
 
         self.frame_head = point_wise_feed_forward_network(256, 1, hidden_dim)
-        self.encoder = UNet16(num_classes=hidden_dim, pretrained=pretrained)
+        self.encoder = UNet16(num_classes=hidden_dim, weights=weights)
         self.hidden_layer = nn.Conv2d(hidden_dim, hidden_dim, 1)
         self.segmentation_head = nn.Conv2d(hidden_dim, output_dim, 1)
 
