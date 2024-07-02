@@ -6,3 +6,4 @@ torch==2.2.0
 medpy==0.5.1
 pandas==2.0.3
 torchvision
+click

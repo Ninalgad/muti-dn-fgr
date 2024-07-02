@@ -24,20 +24,23 @@ from pathlib import Path
 
 import numpy as np
 import SimpleITK
-
+import click
 from model import FetalAbdomenSegmentation
 
-INPUT_PATH = Path("/input")
-OUTPUT_PATH = Path("/output")
-RESOURCE_PATH = Path("resources")
 
-DEBUG = False
-
-
-def run():
+@click.command()
+@click.option('--input-path', '-i', type=str, default="/input")
+@click.option('--output-path', '-o', type=str, default="/output")
+@click.option('--resource-path', '-r', type=str, default="resources")
+@click.option('--debug', is_flag=True, show_default=True, default=False)
+def run(input_path, output_path, resource_path, debug):
+    input_path = Path(input_path)
+    output_path = Path(output_path)
+    resource_path = Path(resource_path)
+    
     # Read the input
     stacked_fetal_ultrasound_path = get_image_file_path(
-        location=INPUT_PATH / "images/stacked-fetal-ultrasound")
+        location=input_path / "images/stacked-fetal-ultrasound")
 
     # Process the inputs: any way you'd like
     _show_torch_cuda_info()
@@ -47,11 +50,11 @@ def run():
 
     # Forward pass
     fetal_abdomen_probability_map, relative_frame_distances = algorithm.predict(
-        stacked_fetal_ultrasound_path, debug=DEBUG)  # (372, 281, num_frames), (num_frames,)
+        stacked_fetal_ultrasound_path, debug=debug)  # (372, 281, 840), (840,)
 
     # Postprocess the output
     fetal_abdomen_postprocessed = algorithm.postprocess(
-        fetal_abdomen_probability_map)  # (num_frames, 562, 744)
+        fetal_abdomen_probability_map)  # (840, 562, 744)
 
     # Select the fetal abdomen mask and the corresponding frame number
     fetal_abdomen_frame_number = get_frame_number(relative_frame_distances)
@@ -59,18 +62,18 @@ def run():
 
     # Save your output
     write_array_as_image_file(
-        location=OUTPUT_PATH / "images/fetal-abdomen-segmentation",
+        location=output_path / "images/fetal-abdomen-segmentation",
         array=fetal_abdomen_segmentation,
         frame_number=fetal_abdomen_frame_number,
     )
     write_json_file(
-        location=OUTPUT_PATH / "fetal-abdomen-frame-number.json",
+        location=output_path / "fetal-abdomen-frame-number.json",
         content=fetal_abdomen_frame_number
     )
 
     # Print the output
     print("output folder contents:")
-    print_directory_contents(OUTPUT_PATH)
+    print_directory_contents(output_path)
 
     # Print shape and type of the output
     print("\nprinting output shape and type:")
