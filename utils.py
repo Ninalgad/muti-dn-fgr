@@ -1,6 +1,5 @@
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
-import torch
 from torch.nn import functional as F
 from scipy.ndimage import zoom
 
@@ -38,10 +37,11 @@ def predict_probabilities(image_3d, model, device, batch_size=4):
     for x in test_loader:
         x = x.to(device)
         s, d = model(x)
-        s = F.sigmoid(s).detach().cpu().numpy()
-        s = np.squeeze(s, axis=1)
-        d = d.detach().cpu().numpy()
-        d = np.squeeze(d, axis=-1)
+
+        s = np.squeeze(F.sigmoid(s).detach().cpu().numpy(), axis=-1)
+        d = np.squeeze(F.sigmoid(d).detach().cpu().numpy(), axis=-1)
+
         seg_pred.append(s)
         dist_pred.append(d)
+
     return np.concatenate(seg_pred, axis=0), np.concatenate(dist_pred, axis=0)

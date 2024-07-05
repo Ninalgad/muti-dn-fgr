@@ -25,17 +25,11 @@ def get_boundary_points(binary_mask):
 
 
 def postprocess_single_probability_map(p_map, config):
-    # m: (n, 372, 281)
+    # m: (840, 372, 281)
     binary_map = (p_map > config['threshold'])
     classes = []
     for bin_frame in binary_map:
-        annotated_frame = np.zeros_like(bin_frame, dtype="uint8")
-        annotated_frame[bin_frame] = 2
-
-        bound_mask = get_boundary_points(bin_frame)
-        annotated_frame[bound_mask] = 1
-
-        frame = zoom(annotated_frame, (2, 2))
+        frame = zoom(bin_frame, (2, 2))
         classes.append(frame)
     classes = np.transpose(np.array(classes, 'uint8'), axes=(0, 2, 1))
     return classes

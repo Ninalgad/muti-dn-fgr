@@ -37,7 +37,7 @@ def run(input_path, output_path, resource_path, debug):
     input_path = Path(input_path)
     output_path = Path(output_path)
     resource_path = Path(resource_path)
-    
+
     # Read the input
     stacked_fetal_ultrasound_path = get_image_file_path(
         location=input_path / "images/stacked-fetal-ultrasound")
@@ -49,7 +49,7 @@ def run(input_path, output_path, resource_path, debug):
     algorithm = FetalAbdomenSegmentation()
 
     # Forward pass
-    fetal_abdomen_probability_map, relative_frame_distances = algorithm.predict(
+    fetal_abdomen_probability_map, frame_probability = algorithm.predict(
         stacked_fetal_ultrasound_path, debug=debug)  # (372, 281, 840), (840,)
 
     # Postprocess the output
@@ -57,8 +57,8 @@ def run(input_path, output_path, resource_path, debug):
         fetal_abdomen_probability_map)  # (840, 562, 744)
 
     # Select the fetal abdomen mask and the corresponding frame number
-    fetal_abdomen_frame_number = get_frame_number(relative_frame_distances)
-    fetal_abdomen_segmentation = fetal_abdomen_postprocessed[fetal_abdomen_frame_number]
+    fetal_abdomen_frame_number, fetal_abdomen_segmentation = get_largest_frame(frame_probability,
+                                                                               fetal_abdomen_probability_map)
 
     # Save your output
     write_array_as_image_file(
@@ -87,17 +87,13 @@ def run(input_path, output_path, resource_path, debug):
     return 0
 
 
-def get_frame_number(rel_dist):
-    n = len(rel_dist)
+def get_largest_frame(frame_probabilities, segmentation_map):
+    n = np.argmax(frame_probabilities)
 
-    # aggregate predictions from each frame
-    rfn = np.argmax(compute_distance_distribution(n*rel_dist, n=n))
+    if segmentation_map[n].max() == 0:
+        return -1, np.zeros_like(segmentation_map[0])
 
-    # overall minimum prediction
-    mfn = np.argmin(np.abs(rel_dist))
-
-    # test show averaging yields best results
-    return int(np.rint((rfn + mfn) / 2))
+    return n, segmentation_map[n]
 
 
 def compute_distance_distribution(relative_distances, n=840):

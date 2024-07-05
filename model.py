@@ -53,8 +53,8 @@ class FetalAbdomenSegmentation(SegmentationAlgorithm):
             image_np = image_np[:, :, :2]
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        probabilities, relative_distances = predict_probabilities(image_np, self.predictor, device)
-        return probabilities, relative_distances
+        seg_probabilities, frame_probabilities = predict_probabilities(image_np, self.predictor, device)
+        return seg_probabilities, frame_probabilities
 
     def postprocess(self, probability_map):
         """
