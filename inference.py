@@ -49,16 +49,15 @@ def run(input_path, output_path, resource_path, debug):
     algorithm = FetalAbdomenSegmentation()
 
     # Forward pass
-    fetal_abdomen_probability_map, frame_probability = algorithm.predict(
+    fetal_abdomen_map, frame_probability = algorithm.predict(
         stacked_fetal_ultrasound_path, debug=debug)  # (372, 281, 840), (840,)
 
     # Postprocess the output
-    fetal_abdomen_postprocessed = algorithm.postprocess(
-        fetal_abdomen_probability_map)  # (840, 562, 744)
+    fetal_abdomen_map = algorithm.postprocess(fetal_abdomen_map)  # (840, 562, 744)
 
     # Select the fetal abdomen mask and the corresponding frame number
-    fetal_abdomen_frame_number, fetal_abdomen_segmentation = get_largest_frame(frame_probability,
-                                                                               fetal_abdomen_probability_map)
+    fetal_abdomen_frame_number, fetal_abdomen_segmentation = get_largest_frame(
+        frame_probability, fetal_abdomen_map)
 
     # Save your output
     write_array_as_image_file(
@@ -88,23 +87,12 @@ def run(input_path, output_path, resource_path, debug):
 
 
 def get_largest_frame(frame_probabilities, segmentation_map):
-    n = np.argmax(frame_probabilities)
+    n = int(np.argmax(frame_probabilities))
 
     if segmentation_map[n].max() == 0:
         return -1, np.zeros_like(segmentation_map[0])
 
     return n, segmentation_map[n]
-
-
-def compute_distance_distribution(relative_distances, n=840):
-    dist = np.zeros(n)
-    for i, x in enumerate(relative_distances):
-        if x != -1:
-            j = int(i + x)
-            j = np.clip(j, 0, n - 1)
-            dist[j] = 1 + dist[j]
-
-    return dist
 
 
 def write_json_file(*, location, content):
@@ -124,8 +112,6 @@ def load_image_file_as_array(*, location):
 
 
 # Get image file path from input folder
-
-
 def get_image_file_path(*, location):
     input_files = glob(str(location / "*.tiff")) + \
                   glob(str(location / "*.mha"))

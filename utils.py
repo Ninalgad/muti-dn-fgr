@@ -29,8 +29,8 @@ class TestImageDataset(Dataset):
         return self.x[idx]
 
 
-def predict_probabilities(image_3d, model, device, batch_size=4):
-    images = convert_3d_image_to_2d(image_3d)
+def predict_probabilities(images, model, device, batch_size=2):
+    images = convert_3d_image_to_2d(images)
     test_loader = DataLoader(TestImageDataset(images), batch_size=batch_size, shuffle=False)
     seg_pred, dist_pred = [], []
 
@@ -38,8 +38,8 @@ def predict_probabilities(image_3d, model, device, batch_size=4):
         x = x.to(device)
         s, d = model(x)
 
-        s = np.squeeze(F.sigmoid(s).detach().cpu().numpy(), axis=-1)
-        d = np.squeeze(F.sigmoid(d).detach().cpu().numpy(), axis=-1)
+        s = np.squeeze(F.sigmoid(s).detach().cpu().numpy().astype("float16"), axis=1)
+        d = np.squeeze(F.sigmoid(d).detach().cpu().numpy().astype("float16"), axis=-1)
 
         seg_pred.append(s)
         dist_pred.append(d)
