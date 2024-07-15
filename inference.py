@@ -45,15 +45,23 @@ def run(input_path, output_path, resource_path, debug):
     # Process the inputs: any way you'd like
     _show_torch_cuda_info()
 
-    # Instantiate the algorithm
-    algorithm = FetalAbdomenSegmentation()
+    fetal_abdomen_map, frame_probability = 0, 0
+    for chkpt_path in ["model-0.pt", "model-1.pt"]:
+        # Instantiate the algorithm
+        algorithm = FetalAbdomenSegmentation(chkpt_path)
 
-    # Forward pass
-    fetal_abdomen_map, frame_probability = algorithm.predict(
-        stacked_fetal_ultrasound_path, debug=debug)  # (372, 281, 840), (840,)
+        # Forward pass
+        s, f = algorithm.predict(
+            stacked_fetal_ultrasound_path, debug=debug)  # (372, 281, 840), (840,)
 
-    # Postprocess the output
-    fetal_abdomen_map = algorithm.postprocess(fetal_abdomen_map)  # (840, 562, 744)
+        # Postprocess the output
+        s = algorithm.postprocess(s)  # (840, 562, 744)
+
+        fetal_abdomen_map += s
+        frame_probability += f
+        del s, f, algorithm
+
+    fetal_abdomen_map, frame_probability = fetal_abdomen_map/2, frame_probability/2
 
     # Select the fetal abdomen mask and the corresponding frame number
     fetal_abdomen_frame_number, fetal_abdomen_segmentation = get_largest_frame(

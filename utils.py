@@ -30,51 +30,17 @@ class TestImageDataset(Dataset):
         return self.x[idx]
 
 
-def postprocess_model_output(x):
-    return F.sigmoid(x).detach().cpu().numpy()
-
-
-def aug_predict(model, inp, device):
-    # x: (n, 3, d, d)
-    pred_s, pred_d = 0, 0
-    x = torch.tensor(inp, dtype=torch.float32).to(device)
-
-    s, d = model(x)
-    pred_s += postprocess_model_output(s)
-    pred_d += postprocess_model_output(d)
-
-    s, d = model(torch.flip(x, [-1]))
-    s = torch.flip(s, [-1])
-    pred_s += postprocess_model_output(s)
-    pred_d += postprocess_model_output(d)
-
-    s, d = model(torch.flip(x, [-2]))
-    s = torch.flip(s, [-2])
-    pred_s += postprocess_model_output(s)
-    pred_d += postprocess_model_output(d)
-
-    s, d = model(torch.flip(x, [-1, -2]))
-    s = torch.flip(s, [-1, -2])
-    pred_s += postprocess_model_output(s)
-    pred_d += postprocess_model_output(d)
-
-    return pred_s / 4., pred_d / 4.
-
-
 def predict_probabilities(images, model, device, batch_size=2):
     images = convert_3d_image_to_2d(images)
     test_loader = DataLoader(TestImageDataset(images), batch_size=batch_size, shuffle=False)
     seg_pred, dist_pred = [], []
 
     for x in test_loader:
-        # x = x.to(device)
-        # s, d = model(x)
-        # s = np.squeeze(F.sigmoid(s).detach().cpu().numpy().astype("float16"), axis=1)
-        # d = np.squeeze(F.sigmoid(d).detach().cpu().numpy().astype("float16"), axis=-1)
+        x = x.to(device)
+        s, d = model(x)
 
-        s, d = aug_predict(model, x, device)
-        s = np.squeeze(s.astype("float16"), axis=1)
-        d = np.squeeze(d.astype("float16"), axis=-1)
+        s = np.squeeze(F.sigmoid(s).detach().cpu().numpy().astype("float16"), axis=1)
+        d = np.squeeze(F.sigmoid(d).detach().cpu().numpy().astype("float16"), axis=-1)
 
         seg_pred.append(s)
         dist_pred.append(d)

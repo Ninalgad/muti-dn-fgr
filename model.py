@@ -15,7 +15,7 @@ RESOURCE_PATH = Path("resources")
 
 
 class FetalAbdomenSegmentation(SegmentationAlgorithm):
-    def __init__(self):
+    def __init__(self, checkpoint):
         super().__init__(
             validators=dict(
                 input_image=(
@@ -26,9 +26,9 @@ class FetalAbdomenSegmentation(SegmentationAlgorithm):
         )
         # Initialize the predictor
         self.predictor = self.threshold = None
-        self.initialize_predictor()
+        self.initialize_predictor(checkpoint)
 
-    def initialize_predictor(self, checkpoint="checkpoint_final.pt"):
+    def initialize_predictor(self, checkpoint):
         """
         Initializes the nnUNet predictor
         """
