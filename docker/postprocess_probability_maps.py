@@ -31,5 +31,5 @@ def postprocess_single_probability_map(p_map, config):
     for bin_frame in binary_map:
         frame = zoom(bin_frame, (2, 2))
         classes.append(frame)
-    classes = np.transpose(np.array(classes, 'uint8'), axes=(0, 2, 1))
+    classes = np.transpose(np.array(classes, 'float16'), axes=(0, 2, 1))
     return classes

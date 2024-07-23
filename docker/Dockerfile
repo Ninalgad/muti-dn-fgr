@@ -15,7 +15,8 @@ WORKDIR /opt/app
 # |-- plans.json
 # |-- dataset.json
 # |-- fold_0/
-# |---- checkpoint_final.pth
+# |---- model-0.pt
+# |---- model-1.pt
 # |-- fold_1/...
 # |-- fold_2/...
 # |-- fold_3/...

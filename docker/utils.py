@@ -2,7 +2,6 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from torch.nn import functional as F
 from scipy.ndimage import zoom
-import torch
 
 
 def preprocess_2d_image(x):
@@ -30,6 +29,14 @@ class TestImageDataset(Dataset):
         return self.x[idx]
 
 
+def process_output(x, dtype="float16"):
+    x = F.sigmoid(x).detach().cpu().numpy().astype(dtype)
+    for dim in x.shape:
+        if dim == 1:
+            x = np.squeeze(x, axis=dim)
+    return x
+
+
 def predict_probabilities(images, model, device, batch_size=2):
     images = convert_3d_image_to_2d(images)
     test_loader = DataLoader(TestImageDataset(images), batch_size=batch_size, shuffle=False)
@@ -39,9 +46,7 @@ def predict_probabilities(images, model, device, batch_size=2):
         x = x.to(device)
         s, d = model(x)
 
-        s = np.squeeze(F.sigmoid(s).detach().cpu().numpy().astype("float16"), axis=1)
-        d = np.squeeze(F.sigmoid(d).detach().cpu().numpy().astype("float16"), axis=-1)
-
+        s, d = process_output(s), process_output(d)
         seg_pred.append(s)
         dist_pred.append(d)
 

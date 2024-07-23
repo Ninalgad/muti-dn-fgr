@@ -15,7 +15,7 @@ RESOURCE_PATH = Path("resources")
 
 
 class FetalAbdomenSegmentation(SegmentationAlgorithm):
-    def __init__(self, checkpoint):
+    def __init__(self, checkpoint=None):
         super().__init__(
             validators=dict(
                 input_image=(
@@ -28,23 +28,31 @@ class FetalAbdomenSegmentation(SegmentationAlgorithm):
         self.predictor = self.threshold = None
         self.initialize_predictor(checkpoint)
 
-    def initialize_predictor(self, checkpoint):
+    def load_checkpoint(self, checkpoint):
         """
-        Initializes the nnUNet predictor
+        Loads predictor weights
         """
-        # instantiates the predictor
-        self.predictor = SimpNet()
-
-        # initializes the network architecture, loads the checkpoint
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.predictor.to(device)
         checkpoint = torch.load(RESOURCE_PATH / checkpoint, device)
         self.threshold = checkpoint['best_thresh']
         self.predictor.load_state_dict(checkpoint['model_state_dict'])
 
+    def initialize_predictor(self, checkpoint=None):
+        """
+        Initializes the UNet predictor
+        """
+        # instantiates the predictor
+        self.predictor = SimpNet()
+        # initializes the network architecture
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.predictor.to(device)
+
+        if checkpoint is not None:
+            self.load_checkpoint(checkpoint)
+
     def predict(self, input_img_path, debug=False):
         """
-        Use trained nnUNet network to generate segmentation masks
+        Use trained UNet network to generate segmentation masks
         """
         # ideally we would like to use predictor.predict_from_files but this docker container will be called
         # for each individual test case so that this doesn't make sense
@@ -58,7 +66,7 @@ class FetalAbdomenSegmentation(SegmentationAlgorithm):
 
     def postprocess(self, probability_map):
         """
-        Postprocess the nnUNet output to generate the final AC segmentation mask
+        Postprocess the UNet output to generate the final AC segmentation mask
         """
         # Define the postprocessing configurations
         configs = {
