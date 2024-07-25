@@ -46,7 +46,7 @@ def run(input_path, output_path, resource_path, debug):
     _show_torch_cuda_info()
 
     fetal_abdomen_map, frame_probability = 0, 0
-    checkpoints = ["model-ddp-21000.pt", "model-ddp-30700.pt", "model-ddp-556677.pt", "model-ddp-990011.pt"]
+    checkpoints = ["model-ddp-21000.pt", "model-ddp-990011.pt", "model-ddp-30700.pt", "model-ddp-556677.pt"]
     algorithm = FetalAbdomenSegmentation()
 
     for chkpt_path in checkpoints:
@@ -62,12 +62,12 @@ def run(input_path, output_path, resource_path, debug):
 
         fetal_abdomen_map += s
         frame_probability += f
-        del s, f, algorithm
+        del s, f
 
-    n = len(checkpoints)
-    fetal_abdomen_map, frame_probability = fetal_abdomen_map / n, frame_probability / n
+    del algorithm
 
-    cutoff = int(n // 2)
+    # Highest voted pixels are annotated
+    cutoff = max(1, int(len(checkpoints) // 2))
     fetal_abdomen_map = (fetal_abdomen_map >= cutoff).astype("uint8")
 
     # Select the fetal abdomen mask and the corresponding frame number
