@@ -108,11 +108,11 @@ def get_largest_frame(frame_probabilities, segmentation_map, sweep_width=15):
     if segmentation_map[n].max() == 0:
         # check frames within `sweep_width` for a positive segmentation map
         for i in range(1, sweep_width):
-            j = np.clip(n + i, 0, n_frames)
+            j = np.clip(n + i, 0, n_frames-1)
             if segmentation_map[j].max() > 0:
                 return j, segmentation_map[j]
 
-            j = np.clip(n - i, 0, n_frames)
+            j = np.clip(n - i, 0, n_frames-1)
             if segmentation_map[j].max() > 0:
                 return j, segmentation_map[j]
 
