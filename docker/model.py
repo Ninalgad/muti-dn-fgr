@@ -1,4 +1,3 @@
-from pathlib import Path
 from medpy.io.load import load
 import torch
 from evalutils import SegmentationAlgorithm
@@ -8,10 +7,8 @@ from evalutils.validators import (
 )
 
 from ternausnet import SimpNet
-from utils import predict_probabilities
+from utils import predict_probabilities, smooth
 from postprocess_probability_maps import postprocess_single_probability_map
-
-RESOURCE_PATH = Path("resources")
 
 
 class FetalAbdomenSegmentation(SegmentationAlgorithm):
@@ -33,7 +30,7 @@ class FetalAbdomenSegmentation(SegmentationAlgorithm):
         Loads predictor weights
         """
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        checkpoint = torch.load(RESOURCE_PATH / checkpoint, device)
+        checkpoint = torch.load(checkpoint, device)
         self.threshold = checkpoint['best_thresh']
         self.predictor.load_state_dict(checkpoint['model_state_dict'])
 
@@ -64,9 +61,10 @@ class FetalAbdomenSegmentation(SegmentationAlgorithm):
         seg_probabilities, frame_probabilities = predict_probabilities(image_np, self.predictor, device)
         return seg_probabilities, frame_probabilities
 
-    def postprocess(self, probability_map):
+    def postprocess(self, probability_map, suitability_scores):
         """
         Postprocess the UNet output to generate the final AC segmentation mask
+        and suitability scores
         """
         # Define the postprocessing configurations
         configs = {
@@ -76,5 +74,9 @@ class FetalAbdomenSegmentation(SegmentationAlgorithm):
         # Postprocess the probability map
         mask_postprocessed = postprocess_single_probability_map(
             probability_map, configs)
+
+        # Postprocess suitability score
+        scores_postprocessed = smooth(suitability_scores.astype("float32"))
         print('Postprocessing done')
-        return mask_postprocessed
+
+        return mask_postprocessed, scores_postprocessed

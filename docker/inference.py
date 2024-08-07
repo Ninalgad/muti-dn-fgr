@@ -45,8 +45,8 @@ def run(input_path, output_path, resource_path, debug):
     # Process the inputs: any way you'd like
     _show_torch_cuda_info()
 
-    fetal_abdomen_map, frame_probability = 0, 0
-    checkpoints = ["model-ddp-21000.pt", "model-ddp-990011.pt", "model-ddp-30700.pt", "model-ddp-556677.pt"]
+    fetal_abdomen_map, frame_probability = 0., 0.
+    checkpoints = glob(f"{resource_path}/*.pt")
     algorithm = FetalAbdomenSegmentation()
 
     for chkpt_path in checkpoints:
@@ -58,7 +58,7 @@ def run(input_path, output_path, resource_path, debug):
             stacked_fetal_ultrasound_path, debug=debug)  # (372, 281, 840), (840,)
 
         # Postprocess the output
-        s = algorithm.postprocess(s)  # (840, 562, 744)
+        s, f = algorithm.postprocess(s, f)  # (840, 562, 744), (840,)
 
         fetal_abdomen_map += s
         frame_probability += f
@@ -66,12 +66,12 @@ def run(input_path, output_path, resource_path, debug):
 
     del algorithm
 
-    # Highest voted pixels are annotated
+    # Majority voted pixels are segmented
     cutoff = max(1, int(len(checkpoints) // 2))
     fetal_abdomen_map = (fetal_abdomen_map >= cutoff).astype("uint8")
 
     # Select the fetal abdomen mask and the corresponding frame number
-    fetal_abdomen_frame_number, fetal_abdomen_segmentation = get_largest_frame(
+    fetal_abdomen_frame_number, fetal_abdomen_segmentation = get_suitable_frame(
         frame_probability, fetal_abdomen_map)
 
     # Save your output
@@ -101,7 +101,8 @@ def run(input_path, output_path, resource_path, debug):
     return 0
 
 
-def get_largest_frame(frame_probabilities, segmentation_map, sweep_width=15):
+def get_suitable_frame(frame_probabilities, segmentation_map, sweep_width=15):
+    # Get the optimal frame number and segmentation predictions
     n = int(np.argmax(frame_probabilities))
     n_frames = len(frame_probabilities)
 

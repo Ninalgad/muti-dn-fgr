@@ -2,4 +2,4 @@
 
 ./build.sh
 
-docker save acouslicai_baseline | gzip -c > acouslicai_baseline.tar.gz
+docker save backbone | gzip -c > backbone.tar.gz

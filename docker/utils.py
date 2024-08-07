@@ -1,7 +1,7 @@
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from torch.nn import functional as F
-from scipy.ndimage import zoom
+from scipy.ndimage import zoom, convolve
 
 
 def preprocess_2d_image(x):
@@ -51,3 +51,9 @@ def predict_probabilities(images, model, device, batch_size=2):
         dist_pred.append(d)
 
     return np.concatenate(seg_pred, axis=0), np.concatenate(dist_pred, axis=0)
+
+
+def smooth(y):
+    box = [0.1665, 0.333, 0.333, 0.1665]
+    y_smooth = convolve(y, box, origin=0, mode="constant")
+    return y_smooth
